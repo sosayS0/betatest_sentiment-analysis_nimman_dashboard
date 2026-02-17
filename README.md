@@ -1,5 +1,5 @@
 # 📊 Nimman Price Perception Insight (NPPI)
-> 🚧 **Current Status:** Work in Progress (WIP) - Phase 1 Completed
+> 🚧 **Current Status:** Work in Progress (WIP) -Now Phase 2 
 
 ## 🎯 Project Overview
 A data-driven economic research project aimed at optimizing pricing strategies for the tourism and restaurant sector in Nimman, Chiang Mai. [cite_start]The project integrates Data Science (NLP) with Economics (Hedonic Pricing Theory) to quantify the "Shadow Price" of intangible business attributes like service quality and atmosphere. [cite: 26, 28]
