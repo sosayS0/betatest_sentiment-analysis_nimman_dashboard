@@ -1,68 +1,55 @@
 # Nimman Price Perception Insight (NPPI)
 
-> Quantifying the economic value of intangible restaurant attributes  
-> through NLP and Hedonic Pricing Theory — Nimman, Chiang Mai.
+A data-driven research project quantifying the **"Shadow Price"** of intangible 
+restaurant attributes — service quality, atmosphere, and food experience — in 
+Chiang Mai's Nimman dining district.
+
+The project bridges **Economics (Hedonic Pricing Theory)** and **Data Science (NLP 
+sentiment analysis)** to deliver actionable pricing intelligence for local entrepreneurs 
+and tourism stakeholders.
 
 ---
 
-## Overview
+## Project Overview
 
-What makes customers *feel* a restaurant is worth the price?  
-This project attempts to answer that question empirically.
-
-NPPI is an independent research project that integrates **Data Science** with 
-**Economics** to measure the "Shadow Price" of intangible attributes — service 
-quality, atmosphere, and food experience — across restaurants in the Nimman 
-district. The goal is to translate unstructured customer sentiment into 
-actionable pricing intelligence for local entrepreneurs.
+Consumers don't just pay for food — they pay for *perceived value*. This project 
+attempts to measure exactly how much each intangible attribute contributes to that 
+perception, and which improvements yield the highest marginal returns.
 
 ---
 
-## Research Pipeline
+## Methodology
 
-### ✅ Phase 1 — Data Engineering (Completed)
-Collected and cleaned **25,000+ customer reviews** from Google Maps and 
-TripAdvisor via a custom Python scraping pipeline. Structured into an 
-analysis-ready dataset with restaurant metadata, ratings, and raw review text.
+**Phase 1 — Data Engineering** ✅  
+Collected and cleaned 25,000+ customer reviews from Google Maps and TripAdvisor 
+via a custom Python scraping pipeline. Structured into analysis-ready datasets 
+with restaurant metadata and price-tier classifications.
 
-### ⏳ Phase 2 — NLP & Sentiment Analysis (In Progress)
-Applying a **DeBERTa-based transformer model** to classify review texts into 
-distinct attribute categories (Food, Service, Atmosphere). Each review is 
-decomposed into attribute-level sentiment scores, converting unstructured 
-language into structured economic inputs.
+**Phase 2 — NLP Sentiment Pipeline** ✅  
+Deployed a DeBERTa-based NLP model to classify unstructured review text into 
+distinct attribute dimensions: Food, Service, and Atmosphere. Output: per-restaurant 
+attribute sentiment scores used as independent variables in economic modeling.
 
-### 📅 Phase 3 — Hedonic Pricing Model (Planned)
-Using the sentiment scores as independent variables in a **Hedonic Pricing 
-regression** to estimate the marginal contribution of each attribute to 
-overall perceived value. Output: a replicable framework for shadow price 
-estimation in the tourism sector.
+**Phase 3 — Hedonic Pricing Model** ✅  
+Applied regression-based Hedonic Pricing Models to quantify the marginal contribution 
+of each attribute to overall perceived value. Identifies which attribute investments 
+deliver the highest return — actionable intelligence for pricing strategy decisions.
 
-### 📅 Phase 4 — Interactive Dashboard (Planned)
-Findings will be presented via a **web-based dashboard** — designed to be 
-accessible to non-technical business owners, not just analysts. The goal is 
-to make the research outputs genuinely usable, not just academically interesting.
-
----
-
-## Why This Project
-
-Most pricing strategy advice for small restaurants is intuitive at best.  
-This project is an attempt to put numbers on the things that are usually 
-described in words — and make those numbers useful to the people running the 
-businesses, not just the people studying them.
+**Phase 4 — Visualization & Deployment** ⏳  
+Building an interactive dashboard to present findings to non-technical stakeholders, 
+including restaurant owners and tourism policymakers.
 
 ---
 
 ## Stack
-- **Data Collection:** Python (Requests, BeautifulSoup / Selenium)
-- **NLP:** DeBERTa (transformer-based sentiment classification)
-- **Economic Modeling:** OLS Regression / Hedonic Pricing (Python / R)
-- **Visualization:** TBD — targeting a lightweight, accessible web interface
+
+- **Python** — data collection, cleaning, NLP orchestration, modeling  
+- **Hedonic Pricing / OLS Regression** — economic modeling  
+- **Pandas, Scikit-learn** — data processing and statistical analysis  
+- **Visualization** — in progress
 
 ---
 
 ## Status
-`Phase 1 Complete` → `Phase 2 In Progress` → `Phase 3–4 Planned`
 
-*Solo project. Part of undergraduate research at Chiang Mai University, 
-Economics Department.*
+Core research pipeline complete. Visualization and public deployment in progress.
