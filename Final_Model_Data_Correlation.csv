@@ -1,0 +1,5 @@
+﻿,Avg_Food,Avg_Service,Avg_Atmos,Price_Level
+Avg_Food,1,,,
+Avg_Service,0.756951446,1,,
+Avg_Atmos,0.714443642,0.643026406,1,
+Price_Level,-0.069558866,-0.019797803,0.203822618,1
