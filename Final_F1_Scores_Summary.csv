@@ -1,0 +1,6 @@
+﻿Aspect,gemini-2.5-flash,gpt-4o-mini
+FOOD,0.714,0.5613
+SERVICE,0.6513,0.4763
+ATMOS,0.7699,0.5308
+PRICE,0.6694,0.5995
+OVERALL (รวม 4 มิติ),0.733,0.5776

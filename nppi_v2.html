@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPPI — Nimman Price Perception Insight</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root {
+  --bg:#0d0f18; --s1:#151824; --s2:#1c2030; --s3:#232840;
+  --border:#2a2f50; --border2:#353b60;
+  --accent:#6c8fff; --a2:#ff6b6b; --a3:#4ecdc4; --a4:#ffe66d; --a5:#c084fc;
+  --text:#e2e5f0; --muted:#6b739a; --muted2:#8890b0;
+  --pos:#4ecdc4; --neg:#ff6b6b; --neu:#ffe66d;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+/* HEADER */
+.hdr{background:var(--s1);border-bottom:1px solid var(--border);padding:16px 36px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.hdr-left{}
+.hdr-logo{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent);letter-spacing:.06em;}
+.hdr-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.badge{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:.05em;}
+.badge-blue{background:rgba(108,143,255,.15);color:var(--accent);border:1px solid rgba(108,143,255,.3);}
+.badge-green{background:rgba(78,205,196,.12);color:var(--pos);border:1px solid rgba(78,205,196,.25);}
+
+/* TABS */
+.tabbar{background:var(--s1);border-bottom:1px solid var(--border);display:flex;padding:0 36px;gap:2px;}
+.tbtn{padding:13px 20px;background:none;border:none;color:var(--muted);font-family:'IBM Plex Sans Thai',sans-serif;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.tbtn.on{color:var(--accent);border-bottom-color:var(--accent);}
+.tbtn:hover{color:var(--text);}
+
+/* LAYOUT */
+.main{padding:28px 36px;max-width:1500px;margin:0 auto;}
+.tc{display:none;}.tc.on{display:block;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.gmb{margin-bottom:20px;}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:22px;}
+.card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;gap:8px;}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+/* STAT CARDS */
+.sc{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.sc-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
+.sc-val{font-size:30px;font-weight:600;font-family:'IBM Plex Mono',monospace;line-height:1;}
+.sc-sub{font-size:11px;color:var(--muted);margin-top:6px;}
+.sc-trend{font-size:11px;margin-top:4px;}
+.c-acc{color:var(--accent);} .c-pos{color:var(--pos);} .c-neg{color:var(--neg);} .c-neu{color:var(--neu);}
+
+/* NASS PILL */
+.np{display:inline-block;padding:3px 9px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;min-width:52px;text-align:center;}
+.np-p{background:rgba(78,205,196,.12);color:var(--pos);}
+.np-n{background:rgba(255,107,107,.12);color:var(--neg);}
+.np-m{background:rgba(255,230,109,.1);color:var(--neu);}
+.np-l{background:rgba(107,115,154,.12);color:var(--muted2);}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:9px 12px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;cursor:pointer;white-space:nowrap;user-select:none;}
+th:hover{color:var(--accent);}
+td{padding:9px 12px;border-bottom:1px solid rgba(42,47,80,.5);}
+tr:hover td{background:rgba(108,143,255,.04);}
+.flag-row td:first-child{border-left:2px solid var(--neg);}
+.flag-row td:first-child::before{content:'⚠ ';font-size:10px;color:var(--neg);}
+
+/* SEARCH + FILTER */
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.srch{flex:1;min-width:200px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;font-size:13px;outline:none;}
+.srch:focus{border-color:var(--accent);}
+.srch::placeholder{color:var(--muted);}
+.filt-btn{padding:8px 14px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.filt-btn.on{background:rgba(108,143,255,.12);border-color:var(--accent);color:var(--accent);}
+.filt-btn:hover{color:var(--text);}
+
+/* INSIGHT BANNER */
+.insight-banner{background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.2);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;}
+.insight-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.insight-text .ib-title{font-size:13px;font-weight:600;color:var(--neg);margin-bottom:4px;}
+.insight-text .ib-body{font-size:12px;color:var(--muted2);line-height:1.6;}
+
+/* SIMULATOR */
+.sim-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.sl-group{margin-bottom:20px;}
+.sl-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.sl-name{font-size:13px;color:var(--muted2);}
+.sl-val-box{display:flex;align-items:center;gap:6px;}
+.sl-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);background:rgba(108,143,255,.1);padding:2px 10px;border-radius:5px;min-width:48px;text-align:center;}
+.sl-beta{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:var(--border2);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 6px rgba(108,143,255,.4);}
+.sl-minmax{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;font-family:'IBM Plex Mono',monospace;}
+
+/* EQUATION */
+.eq-box{background:var(--s2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:16px 20px;margin-bottom:22px;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:2;}
+.eq-comment{font-size:10px;color:var(--muted);margin-top:8px;font-family:'IBM Plex Sans Thai',sans-serif;line-height:1.5;}
+
+/* SOURCE TOOLTIP */
+.src-tag{display:inline-flex;align-items:center;gap:5px;background:var(--s3);border:1px solid var(--border2);border-radius:5px;padding:3px 9px;font-size:11px;color:var(--muted2);cursor:help;position:relative;}
+.src-tag:hover .tooltip{display:block;}
+.tooltip{display:none;position:absolute;top:calc(100% + 6px);left:0;width:280px;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:12px;color:var(--text);z-index:99;line-height:1.6;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+
+/* PREDICTED RESULT */
+.pred-wrap{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;position:relative;}
+.pred-big{font-family:'IBM Plex Mono',monospace;font-size:52px;font-weight:600;line-height:1;margin-bottom:2px;}
+.pred-stars{font-size:18px;margin:6px 0 4px;letter-spacing:3px;}
+.pred-label{font-size:12px;color:var(--muted);margin-top:2px;}
+.pred-mkt{position:absolute;top:14px;right:14px;font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+.delta-bar{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.delta-label{font-size:10px;color:var(--muted);margin-bottom:6px;}
+.delta-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.delta-name{font-size:11px;color:var(--muted2);width:60px;flex-shrink:0;}
+.delta-bar-outer{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.delta-bar-inner{height:100%;border-radius:3px;transition:width .3s;}
+.delta-num{font-family:'IBM Plex Mono',monospace;font-size:10px;width:44px;text-align:right;}
+
+/* QUICK SELECT */
+.qs-wrap{margin-bottom:20px;}
+.qs-label{font-size:11px;color:var(--muted);margin-bottom:8px;}
+.qs-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.qs-select{flex:1;min-width:200px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+.qs-select:focus{border-color:var(--accent);}
+.qs-btn{padding:9px 14px;background:rgba(108,143,255,.1);border:1px solid rgba(108,143,255,.3);border-radius:8px;color:var(--accent);font-size:12px;cursor:pointer;white-space:nowrap;}
+.qs-btn:hover{background:rgba(108,143,255,.2);}
+
+/* REC BOXES */
+.rec{border-radius:8px;padding:13px 16px;margin-bottom:10px;border-left:3px solid;font-size:13px;line-height:1.6;}
+.rec-t{font-weight:600;margin-bottom:3px;font-size:12px;}
+.rec.r-red{background:rgba(255,107,107,.07);border-color:var(--neg);}
+.rec.r-grn{background:rgba(78,205,196,.07);border-color:var(--pos);}
+.rec.r-blu{background:rgba(108,143,255,.07);border-color:var(--accent);}
+.rec.r-yel{background:rgba(255,230,109,.07);border-color:var(--neu);}
+
+/* COMPARE */
+.sel-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.sel-wrap{}
+.sel-wrap label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;font-family:'IBM Plex Mono',monospace;}
+.sel-wrap select{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+.sel-wrap select:focus{border-color:var(--accent);}
+
+.h2h-grid{display:flex;flex-direction:column;gap:0;}
+.h2h-header{display:grid;grid-template-columns:1fr 120px 1fr;gap:8px;padding:8px 0 10px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.h2h-row{display:grid;grid-template-columns:1fr 120px 1fr;gap:8px;padding:8px 4px;border-bottom:1px solid rgba(42,47,80,.4);align-items:center;}
+.h2h-metric{font-size:10px;color:var(--muted);text-align:center;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;}
+.h2h-v{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;padding:4px 8px;border-radius:6px;text-align:center;}
+.h2h-v.win{background:rgba(78,205,196,.12);color:var(--pos);}
+.h2h-v.los{color:var(--muted);}
+.h2h-v.tie{color:var(--muted2);}
+
+/* DATA SOURCE PANEL */
+.ds-panel{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:20px;}
+.ds-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.ds-row:last-child{margin-bottom:0;}
+.ds-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.ds-content{font-size:12px;color:var(--muted2);line-height:1.5;}
+.ds-content strong{color:var(--text);}
+
+/* SECTION DIVIDER */
+.sdiv{display:flex;align-items:center;gap:12px;margin:24px 0 18px;}
+.sdiv-line{flex:1;height:1px;background:var(--border);}
+.sdiv-label{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;}
+
+canvas{max-height:380px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">NPPI · Dashboard</div>
+    <div class="hdr-sub">Nimman Price Perception Insight · Chiang Mai · Feb 2026</div>
+  </div>
+  <div class="hdr-right">
+    <span class="badge badge-green">N = 88 Restaurants</span>
+    <span class="badge badge-blue">ABSA · Gemini 1.5 Flash</span>
+  </div>
+</div>
+
+<div class="tabbar">
+  <button class="tbtn on" onclick="switchTab('overview',this)">01 · Market Overview</button>
+  <button class="tbtn" onclick="switchTab('simulator',this)">02 · Hedonic Simulator</button>
+  <button class="tbtn" onclick="switchTab('compare',this)">03 · Competitive Analysis</button>
+</div>
+
+<div class="main">
+
+<!-- ===== TAB 1: OVERVIEW ===== -->
+<div id="tc-overview" class="tc on">
+
+  <div class="g4 gmb" id="statGrid"></div>
+
+  <!-- Key Insight Banner -->
+  <div class="insight-banner">
+    <div class="insight-icon">🔍</div>
+    <div class="insight-text">
+      <div class="ib-title">Hidden Weakness — Rating Paradox</div>
+      <div class="ib-body" id="paradoxText">Loading...</div>
+    </div>
+  </div>
+
+  <div class="g2 gmb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>NASS Score by Aspect — Market Distribution</div>
+      <canvas id="chartBar"></canvas>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">ค่าเฉลี่ย ± SD ของแต่ละด้านทุกร้านในตลาด · เส้น = ค่า median</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--a3)"></span>Market Radar — ภาพรวมทั้งตลาด</div>
+      <canvas id="chartRadarMkt"></canvas>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">ค่าเฉลี่ย NASS ของร้านทั้งหมด N=<span id="radarN">—</span> ร้าน</div>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--a4)"></span>Restaurant Leaderboard
+      <span style="margin-left:auto;font-size:10px;color:var(--muted);font-weight:400">⚠ = Rating สูง แต่ Service ต่ำ (Hidden Weakness)</span>
+    </div>
+    <div class="toolbar">
+      <input class="srch" id="srch" placeholder="ค้นหาชื่อร้าน..." oninput="renderTable()">
+      <button class="filt-btn on" id="fb-all" onclick="setFilter('all',this)">ทั้งหมด</button>
+      <button class="filt-btn" id="fb-hidden" onclick="setFilter('hidden',this)">⚠ Hidden Weakness</button>
+      <button class="filt-btn" id="fb-top" onclick="setFilter('top',this)">🏆 All-Round Top</button>
+      <button class="filt-btn" id="fb-value" onclick="setFilter('value',this)">💚 Best Value</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('Restaurant_Name')">ชื่อร้าน ↕</th>
+            <th onclick="sortBy('Avg_Rating')">Rating ↕</th>
+            <th onclick="sortBy('NASS_FOOD')">Food ↕</th>
+            <th onclick="sortBy('NASS_SERVICE')">Service ↕</th>
+            <th onclick="sortBy('NASS_ATMOS')">Atmos ↕</th>
+            <th onclick="sortBy('NASS_PRICE')">Price Perception ↕</th>
+            <th onclick="sortBy('Price_Level')">Price Lv. ↕</th>
+            <th onclick="sortBy('Total_Reviews')">Reviews ↕</th>
+            <th>Tag</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== TAB 2: SIMULATOR ===== -->
+<div id="tc-simulator" class="tc">
+
+  <!-- Data Source Panel -->
+  <div class="ds-panel">
+    <div class="card-title" style="margin-bottom:12px"><span class="dot"></span>แหล่งที่มาของข้อมูล — Methodology</div>
+    <div class="ds-row">
+      <div class="ds-icon">📊</div>
+      <div class="ds-content"><strong>OLS Regression (Hedonic Pricing Model)</strong> — วิเคราะห์ข้อมูล Cross-sectional จากร้านอาหาร 72 แห่งในย่านนิมมาน ณ เดือน ก.พ. 2569 F-stat = 76.62, p &lt; 0.001</div>
+    </div>
+    <div class="ds-row">
+      <div class="ds-icon">🤖</div>
+      <div class="ds-content"><strong>NASS (Net Aspect Sentiment Score)</strong> — คำนวณจาก 20,800 รีวิวโดย Gemini 1.5 Flash (Macro F1 = 0.795) ผ่าน Aspect-Based Sentiment Analysis</div>
+    </div>
+    <div class="ds-row">
+      <div class="ds-icon">⚠️</div>
+      <div class="ds-content"><strong>ข้อควรระวัง</strong> — Simulator ใช้ค่า Avg Score (1–5 ดาว) ตามที่ OLS model ใช้จริง ไม่ใช่ NASS โดยตรง · R² = 0.8206 (อธิบายความแปรปรวนได้ 82%)</div>
+    </div>
+  </div>
+
+  <!-- OLS Equation -->
+  <div class="eq-box">
+    <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">OLS MODEL — Hedonic Pricing Equation</div>
+    <span style="color:var(--text)">Avg_Rating</span>
+    <span style="color:var(--muted)"> = </span>
+    <span style="color:var(--muted2)">0.148</span>
+    <span style="color:var(--muted)"> + </span>
+    <span style="color:var(--pos);font-weight:600">0.298</span>
+    <span style="color:var(--muted)"> × </span><span style="color:var(--accent)">Avg_Food</span>
+    <span style="color:var(--muted)"> + </span>
+    <span style="color:var(--pos);font-weight:600">0.487</span>
+    <span style="color:var(--muted)"> × </span><span style="color:var(--accent)">Avg_Service</span>
+    <span style="color:var(--muted)"> + </span>
+    <span style="color:var(--pos);font-weight:600">0.184</span>
+    <span style="color:var(--muted)"> × </span><span style="color:var(--accent)">Avg_Atmos</span>
+    <span style="color:var(--neg);font-weight:600"> − 0.027</span>
+    <span style="color:var(--muted)"> × </span><span style="color:var(--accent)">Price_Level</span>
+    <div class="eq-comment">
+      ทุก coefficient มีนัยสำคัญที่ p &lt; 0.05 · Avg_Food, Avg_Service, Avg_Atmos = คะแนน Google Maps 1–5 ดาว · Price_Level = 1–11 · Intercept = 0.148 (ค่าพื้นฐาน)
+    </div>
+  </div>
+
+  <!-- Quick Load Restaurant -->
+  <div class="qs-wrap">
+    <div class="qs-label">📌 โหลดข้อมูลจากร้านจริง — ดูว่าแต่ละร้านอยู่ตรงไหนในแบบจำลอง</div>
+    <div class="qs-row">
+      <select class="qs-select" id="qsSel" onchange="loadRestaurant()">
+        <option value="">— เลือกร้านเพื่อโหลดค่าจริง —</option>
+      </select>
+      <button class="qs-btn" onclick="resetSim()">↺ Reset ค่าเริ่มต้น</button>
+    </div>
+    <div id="qs-note" style="font-size:11px;color:var(--muted);margin-top:6px;display:none;"></div>
+  </div>
+
+  <div class="sim-layout">
+    <!-- LEFT: Sliders -->
+    <div>
+      <div class="card-title" style="margin-bottom:16px"><span class="dot"></span>ปรับค่าคุณลักษณะร้าน (Avg Score 1–5)</div>
+
+      <div class="sl-group">
+        <div class="sl-head">
+          <span class="sl-name">🍜 Food Quality — คุณภาพอาหาร</span>
+          <div class="sl-val-box">
+            <span class="sl-beta" title="Marginal Effect">β = +0.298</span>
+            <span class="sl-val" id="vFood">4.0</span>
+          </div>
+        </div>
+        <input type="range" min="1" max="5" step="0.1" value="4.0" id="sFood" oninput="updateSim()">
+        <div class="sl-minmax"><span>1.0 (แย่)</span><span>5.0 (ยอดเยี่ยม)</span></div>
+      </div>
+
+      <div class="sl-group">
+        <div class="sl-head">
+          <span class="sl-name">🙋 Service Quality — การบริการ</span>
+          <div class="sl-val-box">
+            <span class="sl-beta" style="color:var(--pos)">β = +0.487 ★สูงสุด</span>
+            <span class="sl-val" id="vService">4.0</span>
+          </div>
+        </div>
+        <input type="range" min="1" max="5" step="0.1" value="4.0" id="sService" oninput="updateSim()">
+        <div class="sl-minmax"><span>1.0 (แย่)</span><span>5.0 (ยอดเยี่ยม)</span></div>
+      </div>
+
+      <div class="sl-group">
+        <div class="sl-head">
+          <span class="sl-name">🌿 Atmosphere — บรรยากาศ</span>
+          <div class="sl-val-box">
+            <span class="sl-beta">β = +0.184</span>
+            <span class="sl-val" id="vAtmos">4.0</span>
+          </div>
+        </div>
+        <input type="range" min="1" max="5" step="0.1" value="4.0" id="sAtmos" oninput="updateSim()">
+        <div class="sl-minmax"><span>1.0 (แย่)</span><span>5.0 (ยอดเยี่ยม)</span></div>
+      </div>
+
+      <div class="sl-group">
+        <div class="sl-head">
+          <span class="sl-name">💰 Price Level — ระดับราคา</span>
+          <div class="sl-val-box">
+            <span class="sl-beta" style="color:var(--neg)">β = −0.027</span>
+            <span class="sl-val" id="vPrice">3</span>
+          </div>
+        </div>
+        <input type="range" min="1" max="11" step="1" value="3" id="sPrice" oninput="updateSim()">
+        <div class="sl-minmax"><span>1 (ถูก)</span><span>11 (แพงมาก)</span></div>
+      </div>
+
+      <!-- Contribution breakdown -->
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:8px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.08em;">Contribution to Rating</div>
+        <div id="contribBars"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Result -->
+    <div>
+      <div class="pred-wrap">
+        <div class="pred-mkt" id="mktCompare"></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Predicted Rating</div>
+        <div class="pred-big" id="predBig">4.31</div>
+        <div class="pred-stars" id="predStars">★★★★☆</div>
+        <div class="pred-label" id="predLabel">—</div>
+        <div class="delta-bar">
+          <div class="delta-label">Marginal Effect — ถ้าเพิ่มแต่ละด้านขึ้น +0.5 จะได้ rating เพิ่มเท่าไหร่</div>
+          <div class="delta-row">
+            <span class="delta-name">Food</span>
+            <div class="delta-bar-outer"><div class="delta-bar-inner" style="width:30.5%;background:var(--a3);"></div></div>
+            <span class="delta-num c-pos">+0.149</span>
+          </div>
+          <div class="delta-row">
+            <span class="delta-name">Service</span>
+            <div class="delta-bar-outer"><div class="delta-bar-inner" style="width:50%;background:var(--accent);"></div></div>
+            <span class="delta-num c-acc">+0.244</span>
+          </div>
+          <div class="delta-row">
+            <span class="delta-name">Atmos</span>
+            <div class="delta-bar-outer"><div class="delta-bar-inner" style="width:18.9%;background:var(--neu);"></div></div>
+            <span class="delta-num c-neu">+0.092</span>
+          </div>
+          <div class="delta-row">
+            <span class="delta-name">Price +1</span>
+            <div class="delta-bar-outer"><div class="delta-bar-inner" style="width:2.8%;background:var(--neg);"></div></div>
+            <span class="delta-num c-neg">−0.027</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommendations — all 4 aspects always shown -->
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.08em;">Strategic Recommendations</div>
+      <div id="recAll"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== TAB 3: COMPARE ===== -->
+<div id="tc-compare" class="tc">
+
+  <div class="sel-row">
+    <div class="sel-wrap">
+      <label>Restaurant A</label>
+      <select id="selA" onchange="renderCompare()"></select>
+    </div>
+    <div class="sel-wrap">
+      <label>Restaurant B</label>
+      <select id="selB" onchange="renderCompare()"></select>
+    </div>
+  </div>
+
+  <div class="g2 gmb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>NASS Radar — เปรียบเทียบ 2 ร้าน vs Market Avg</div>
+      <canvas id="chartRadarCmp"></canvas>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">เส้นประสีขาว = Market Average</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--a2)"></span>Head-to-Head Comparison</div>
+      <div id="h2hWrap"></div>
+    </div>
+  </div>
+
+  <!-- Profile Cards -->
+  <div class="g2">
+    <div class="card" id="profileA"></div>
+    <div class="card" id="profileB"></div>
+  </div>
+
+</div>
+</div><!-- /main -->
+
+<script>
+// ===================== DATA =====================
+const DATA = [
+  {n:"86 Eighty Six Ramen",r:187,pl:1,ar:4.51,f:72.2,sv:56.9,at:25.7,pr:90.1},
+  {n:"Accha Authentic Indian",r:291,pl:null,ar:4.68,f:74.2,sv:71.0,at:69.8,pr:59.8},
+  {n:"Always LOAF U Nimman",r:200,pl:2,ar:4.85,f:93.0,sv:84.0,at:90.8,pr:30.4},
+  {n:"Anchan Vegetarian",r:693,pl:1,ar:4.6,f:85.6,sv:68.4,at:66.5,pr:53.5},
+  {n:"Beast Burger and Pizza",r:244,pl:2,ar:4.66,f:73.4,sv:60.6,at:65.2,pr:22.6},
+  {n:"Beer Lab",r:146,pl:6,ar:4.04,f:66.4,sv:45.8,at:81.3,pr:-55.4},
+  {n:"Blackitch Artisan Kitchen",r:207,pl:6,ar:4.64,f:80.7,sv:73.9,at:62.7,pr:15.0},
+  {n:"Caravan Bar",r:131,pl:4,ar:4.7,f:86.3,sv:88.6,at:96.0,pr:23.5},
+  {n:"Co&Co Cafe",r:55,pl:2,ar:4.84,f:89.1,sv:82.6,at:97.4,pr:100.0},
+  {n:"Eat@Rincome",r:87,pl:5,ar:4.16,f:65.5,sv:70.0,at:77.4,pr:63.6},
+  {n:"Fresh Harvest Farm",r:196,pl:6,ar:4.25,f:57.1,sv:70.2,at:78.7,pr:19.0},
+  {n:"Go Green Cafe",r:120,pl:1,ar:4.94,f:93.3,sv:97.1,at:94.6,pr:100.0},
+  {n:"Groon",r:196,pl:2,ar:4.59,f:85.7,sv:59.6,at:78.2,pr:3.4},
+  {n:"Hong Tauw Inn",r:323,pl:2,ar:4.48,f:74.3,sv:58.4,at:76.1,pr:76.1},
+  {n:"Lumi - Italian Restaurant",r:1566,pl:6,ar:4.79,f:91.6,sv:95.3,at:93.4,pr:44.4},
+  {n:"Mix Beef Club & Restaurant",r:203,pl:6,ar:4.7,f:58.1,sv:12.8,at:71.3,pr:18.6},
+  {n:"Molto Buono Pizza",r:62,pl:1,ar:4.66,f:80.6,sv:100.0,at:66.7,pr:88.9},
+  {n:"Nainoi Malatang",r:153,pl:1,ar:4.8,f:80.4,sv:79.0,at:78.7,pr:100.0},
+  {n:"Newtown Nimman",r:83,pl:1,ar:4.21,f:45.8,sv:37.5,at:60.6,pr:34.8},
+  {n:"Panini&Co.",r:139,pl:1,ar:4.93,f:97.1,sv:100.0,at:94.7,pr:100.0},
+  {n:"Pizza my Heart",r:192,pl:3,ar:4.67,f:95.3,sv:92.1,at:91.5,pr:77.3},
+  {n:"Rainy's Veggie Burgers",r:150,pl:1,ar:4.99,f:100.0,sv:100.0,at:100.0,pr:100.0},
+  {n:"Real Good Pasta",r:141,pl:2,ar:4.47,f:70.2,sv:65.2,at:69.4,pr:65.6},
+  {n:"Rock Me Burger",r:658,pl:null,ar:4.48,f:69.6,sv:65.4,at:69.9,pr:51.4},
+  {n:"S&A Beverages Nimman",r:142,pl:5,ar:4.98,f:97.9,sv:100.0,at:100.0,pr:92.9},
+  {n:"SHELBY BAR",r:23,pl:6,ar:4.0,f:26.1,sv:0.0,at:58.8,pr:83.3},
+  {n:"Smoothie Blues",r:415,pl:2,ar:4.32,f:74.9,sv:55.3,at:62.1,pr:29.0},
+  {n:"The Sax Music House",r:158,pl:2,ar:4.86,f:89.2,sv:93.8,at:93.5,pr:61.1},
+  {n:"Uchi Japanese Gastro",r:361,pl:6,ar:4.77,f:89.8,sv:91.5,at:97.2,pr:27.5},
+  {n:"Why Not?",r:367,pl:5,ar:4.59,f:65.1,sv:68.4,at:86.6,pr:53.5},
+  {n:"yesterday cafe",r:110,pl:1,ar:4.36,f:54.5,sv:31.6,at:86.4,pr:-38.5},
+  {n:"ก๋วยจั๊บฟ้าธานี",r:204,pl:1,ar:4.52,f:84.8,sv:83.9,at:26.7,pr:69.8},
+  {n:"ก๋วยเตี๋ยวเรือ อองตอง",r:205,pl:1,ar:4.3,f:71.2,sv:64.3,at:79.8,pr:50.8},
+  {n:"ข้าวผัดพ่นไฟ",r:65,pl:1,ar:4.94,f:96.9,sv:88.9,at:100.0,pr:86.7},
+  {n:"ข้าวมันไก่ โกยี",r:165,pl:1,ar:4.18,f:53.3,sv:17.6,at:29.2,pr:93.0},
+  {n:"จงเฮง ก๋วยเตี๋ยวต้มยำ",r:192,pl:1,ar:4.87,f:93.2,sv:71.7,at:93.6,pr:75.6},
+  {n:"ชา ชา ชาบู",r:185,pl:2,ar:4.99,f:98.9,sv:97.3,at:97.7,pr:98.2},
+  {n:"นายเพทาย หมูทอด-ไก่ทอด",r:132,pl:1,ar:4.72,f:87.1,sv:73.7,at:41.3,pr:91.6},
+  {n:"น้องบีอาหารเมียนมา",r:279,pl:1,ar:4.63,f:79.2,sv:48.0,at:8.8,pr:86.7},
+  {n:"พ๊อตโตะ",r:157,pl:1,ar:4.6,f:66.9,sv:55.6,at:84.1,pr:84.4},
+  {n:"ภัตตาคารเจี่ยท้งเฮง",r:180,pl:3,ar:4.47,f:66.1,sv:69.6,at:82.5,pr:63.5},
+  {n:"ร้านก๋วยเตี๋ยวป้าเกี๋ยง",r:190,pl:1,ar:4.89,f:94.2,sv:100.0,at:66.1,pr:98.3},
+  {n:"ร้านอร่อยดี Aroi Dee",r:321,pl:1,ar:4.41,f:77.9,sv:84.6,at:77.5,pr:90.3},
+  {n:"ร้านเนื้อตุ๋นรสเยี่ยม",r:165,pl:1,ar:4.0,f:58.2,sv:37.5,at:-26.9,pr:-28.3},
+  {n:"ลุงพัน อาหารตามสั่ง",r:93,pl:1,ar:4.75,f:94.6,sv:93.0,at:61.5,pr:100.0},
+  {n:"สมาย คิชเช่น",r:173,pl:2,ar:4.7,f:93.6,sv:62.5,at:80.3,pr:92.7},
+  {n:"อังเคิลคานิ",r:184,pl:2,ar:4.6,f:81.0,sv:50.0,at:82.0,pr:68.9},
+  {n:"เดอะ สลัด คอนเซ็ปท์",r:543,pl:2,ar:4.54,f:70.9,sv:23.6,at:68.9,pr:52.4},
+  {n:"เตี๋ยวยำโบราณ",r:105,pl:1,ar:4.82,f:87.6,sv:89.2,at:75.0,pr:90.6},
+  {n:"เฮือนเพ็ญ นิมมานเหมินทร์",r:726,pl:null,ar:4.58,f:43.0,sv:-9.4,at:37.9,pr:49.0},
+  {n:"แดน ข้าวมันไก่ บายแมก",r:181,pl:1,ar:4.66,f:84.0,sv:86.0,at:77.5,pr:98.6},
+  {n:"โกปี๊ นิมมาน อาหารเช้า",r:177,pl:1,ar:3.42,f:33.3,sv:-15.3,at:65.0,pr:23.0},
+  {n:"โค บี คิว",r:313,pl:4,ar:4.66,f:83.4,sv:91.5,at:83.0,pr:54.0},
+  {n:"โบตั๋น อาหารญี่ปุ่น",r:190,pl:1,ar:4.55,f:87.9,sv:76.5,at:10.9,pr:94.8},
+  {n:"ไก่ย่างเชิงดอย",r:306,pl:2,ar:4.3,f:61.1,sv:8.1,at:32.7,pr:63.7},
+];
+
+const V = DATA.filter(d => d.r >= 30 && d.ar > 0);
+const avg = k => V.reduce((s,d)=>s+(d[k]||0),0)/V.length;
+const MKT = {f:avg('f'),sv:avg('sv'),at:avg('at'),pr:avg('pr'),ar:avg('ar')};
+
+// Tags
+function getTags(d) {
+  const tags = [];
+  if (d.ar >= 4.7 && d.sv < 35) tags.push({label:'⚠ Hidden Weakness',cls:'np-n'});
+  if (d.f >= 75 && d.sv >= 75 && d.at >= 60) tags.push({label:'🏆 All-Round',cls:'np-p'});
+  if (d.pr >= 70 && (d.pl||5) <= 2) tags.push({label:'💚 Best Value',cls:'np-p'});
+  if (d.sv >= 85) tags.push({label:'⭐ Top Service',cls:'np-m'});
+  return tags;
+}
+
+// ===================== STATS =====================
+const hidden = V.filter(d => d.ar >= 4.7 && d.sv < 35);
+document.getElementById('statGrid').innerHTML = `
+  <div class="sc"><div class="sc-label">Total Restaurants</div><div class="sc-val c-acc">${V.length}</div><div class="sc-sub">ย่านนิมมานเหมินทร์</div></div>
+  <div class="sc"><div class="sc-label">Total Reviews</div><div class="sc-val c-acc">${V.reduce((s,d)=>s+d.r,0).toLocaleString()}</div><div class="sc-sub">Google Maps + TripAdvisor</div></div>
+  <div class="sc"><div class="sc-label">Market Avg Rating</div><div class="sc-val c-pos">${MKT.ar.toFixed(2)} ★</div><div class="sc-sub">คะแนนเฉลี่ยทั้งตลาด</div></div>
+  <div class="sc"><div class="sc-label">Hidden Weakness</div><div class="sc-val c-neg">${hidden.length}</div><div class="sc-sub">ร้านที่ Rating ≥ 4.7 แต่ Service ต่ำ</div></div>
+`;
+document.getElementById('radarN').textContent = V.length;
+document.getElementById('paradoxText').textContent =
+  `พบ ${hidden.length} ร้านที่มี Rating ≥ 4.7 แต่ NASS_Service < 35 — ได้แก่ ${hidden.map(d=>d.n).join(', ')} · แสดงว่า Avg Rating อาจซ่อนจุดอ่อนด้านบริการไว้ ซึ่ง NASS เปิดเผยได้ดีกว่าดาวเฉลี่ย`;
+
+// ===================== CHARTS =====================
+// Bar chart: mean NASS per aspect
+const means = [MKT.f, MKT.sv, MKT.at, MKT.pr];
+const sds = ['f','sv','at','pr'].map(k => {
+  const m = avg(k);
+  return Math.sqrt(V.reduce((s,d)=>s+(d[k]-m)**2,0)/V.length);
+});
+new Chart(document.getElementById('chartBar'),{
+  type:'bar',
+  data:{
+    labels:['Food','Service','Atmosphere','Price Perception'],
+    datasets:[
+      {label:'Market Average',data:means,backgroundColor:['rgba(78,205,196,.65)','rgba(108,143,255,.65)','rgba(255,230,109,.65)','rgba(255,107,107,.65)'],borderRadius:6,borderSkipped:false},
+      {label:'±1 SD (upper)',data:means.map((m,i)=>sds[i]),backgroundColor:'transparent',borderColor:'transparent',type:'bar'},
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}`}}
+    },
+    scales:{
+      x:{ticks:{color:'#6b739a'},grid:{color:'rgba(42,47,80,.4)'}},
+      y:{min:-20,max:110,ticks:{color:'#6b739a'},grid:{color:'rgba(42,47,80,.4)'},title:{display:true,text:'NASS Score',color:'#6b739a'}}
+    }
+  }
+});
+
+// Error bar overlay via annotation isn't available, add SD as a second visual: custom plugin
+// Market Radar
+new Chart(document.getElementById('chartRadarMkt'),{
+  type:'radar',
+  data:{
+    labels:['Food','Service','Atmosphere','Price'],
+    datasets:[{
+      label:'Market Avg',
+      data:[MKT.f,MKT.sv,MKT.at,MKT.pr],
+      backgroundColor:'rgba(108,143,255,.12)',borderColor:'rgba(108,143,255,.8)',borderWidth:2,
+      pointBackgroundColor:'var(--accent)',pointRadius:5,
+    }]
+  },
+  options:{responsive:true,
+    plugins:{legend:{labels:{color:'#6b739a',font:{size:11}}}},
+    scales:{r:{min:-20,max:100,ticks:{color:'#6b739a',stepSize:25,backdropColor:'transparent'},
+      grid:{color:'rgba(42,47,80,.6)'},angleLines:{color:'rgba(42,47,80,.6)'},
+      pointLabels:{color:'#e2e5f0',font:{size:13}}}}
+  }
+});
+
+// ===================== TABLE =====================
+let sortK='ar', sortA=false, activeFilter='all';
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderTable();
+}
+function sortBy(k){ sortK===k?sortA=!sortA:(sortK=k,sortA=false); renderTable(); }
+function pill(v){
+  if(v===null||isNaN(v)) return '<span class="np np-l">N/A</span>';
+  const c = v>=60?'np-p':v>=20?'np-m':v>=0?'np-m':'np-n';
+  return `<span class="np ${c}">${v.toFixed(1)}</span>`;
+}
+function renderTable(){
+  const q = document.getElementById('srch').value.toLowerCase();
+  let rows = V.filter(d=>d.n.toLowerCase().includes(q));
+  if(activeFilter==='hidden') rows = rows.filter(d=>d.ar>=4.7&&d.sv<35);
+  if(activeFilter==='top') rows = rows.filter(d=>d.f>=75&&d.sv>=75&&d.at>=60);
+  if(activeFilter==='value') rows = rows.filter(d=>d.pr>=70&&(d.pl||5)<=2);
+  rows.sort((a,b)=>{
+    const va=a[sortK]??-999, vb=b[sortK]??-999;
+    return sortA?va-vb:vb-va;
+  });
+  const body = document.getElementById('tbody');
+  body.innerHTML = rows.map(d=>{
+    const tags = getTags(d);
+    const isHidden = d.ar>=4.7&&d.sv<35;
+    return `<tr class="${isHidden?'flag-row':''}">
+      <td style="font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.n}</td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:${d.ar>=4.7?'var(--pos)':d.ar>=4.3?'var(--neu)':'var(--neg)'}">${d.ar.toFixed(2)}</span></td>
+      <td>${pill(d.f)}</td>
+      <td>${pill(d.sv)}</td>
+      <td>${pill(d.at)}</td>
+      <td>${pill(d.pr)}</td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted2)">${d.pl??'—'}</span></td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted2)">${d.r.toLocaleString()}</span></td>
+      <td>${tags.map(t=>`<span class="np ${t.cls}" style="font-size:10px;white-space:nowrap">${t.label}</span>`).join(' ')}</td>
+    </tr>`;
+  }).join('');
+}
+renderTable();
+
+// ===================== SIMULATOR =====================
+const qSel = document.getElementById('qsSel');
+V.sort((a,b)=>a.n.localeCompare(b.n,'th')).forEach((d,i)=>{
+  const o = new Option(d.n, i); qSel.appendChild(o);
+});
+
+// Convert NASS to approx Avg_Score: NASS≈(Avg_Score-1)/4*100 → Avg_Score = NASS/25+1
+const nassToScore = v => Math.max(1,Math.min(5,(v/25)+1));
+
+function loadRestaurant(){
+  const idx = qSel.value;
+  if(!idx) return;
+  const d = V[+idx];
+  const fs = nassToScore(d.f), ss = nassToScore(d.sv), as2 = nassToScore(d.at);
+  document.getElementById('sFood').value = fs;
+  document.getElementById('sService').value = ss;
+  document.getElementById('sAtmos').value = as2;
+  document.getElementById('sPrice').value = d.pl||3;
+  document.getElementById('qs-note').style.display='block';
+  document.getElementById('qs-note').innerHTML = `โหลดข้อมูลจาก <strong style="color:var(--text)">${d.n}</strong> · Rating จริง: ${d.ar.toFixed(2)} · Reviews: ${d.r.toLocaleString()}`;
+  updateSim();
+}
+
+function resetSim(){
+  document.getElementById('sFood').value=4;
+  document.getElementById('sService').value=4;
+  document.getElementById('sAtmos').value=4;
+  document.getElementById('sPrice').value=3;
+  document.getElementById('qsSel').value='';
+  document.getElementById('qs-note').style.display='none';
+  updateSim();
+}
+
+function updateSim(){
+  const f=+document.getElementById('sFood').value;
+  const sv=+document.getElementById('sService').value;
+  const at=+document.getElementById('sAtmos').value;
+  const pl=+document.getElementById('sPrice').value;
+  document.getElementById('vFood').textContent=f.toFixed(1);
+  document.getElementById('vService').textContent=sv.toFixed(1);
+  document.getElementById('vAtmos').textContent=at.toFixed(1);
+  document.getElementById('vPrice').textContent=pl;
+
+  const pred = Math.min(5,Math.max(1, 0.148+0.298*f+0.487*sv+0.184*at-0.027*pl));
+  const bigEl = document.getElementById('predBig');
+  bigEl.textContent=pred.toFixed(2);
+  bigEl.style.color=pred>=4.7?'var(--pos)':pred>=4.3?'var(--neu)':'var(--neg)';
+  document.getElementById('predStars').textContent='★'.repeat(Math.round(pred))+'☆'.repeat(5-Math.round(pred));
+  document.getElementById('predLabel').textContent=pred>=4.7?'Excellent — Top Tier':pred>=4.5?'Very Good — Above Market':pred>=4.2?'Average — ระดับตลาด':'Below Market Standard';
+  document.getElementById('mktCompare').textContent=`Market avg: ${MKT.ar.toFixed(2)} ★`;
+
+  // Contribution bars
+  const contribs = [
+    {name:'Food',val:0.298*f,color:'var(--a3)'},
+    {name:'Service',val:0.487*sv,color:'var(--accent)'},
+    {name:'Atmos',val:0.184*at,color:'var(--neu)'},
+    {name:'Price',val:-0.027*pl,color:'var(--neg)'},
+    {name:'Intercept',val:0.148,color:'var(--muted)'},
+  ];
+  const maxC = Math.max(...contribs.map(c=>Math.abs(c.val)));
+  document.getElementById('contribBars').innerHTML = contribs.map(c=>{
+    const pct = (Math.abs(c.val)/maxC*100).toFixed(1);
+    const sign = c.val>=0?'+':'';
+    return `<div class="delta-row">
+      <span class="delta-name" style="width:70px">${c.name}</span>
+      <div class="delta-bar-outer"><div class="delta-bar-inner" style="width:${pct}%;background:${c.color};"></div></div>
+      <span class="delta-num" style="color:${c.val>=0?'var(--pos)':'var(--neg)'}">${sign}${c.val.toFixed(3)}</span>
+    </div>`;
+  }).join('');
+
+  // Recs — all 4 aspects always shown
+  const mktAvgScore = nassToScore(MKT.sv);
+  const recs = [
+    {
+      aspect:'🍜 Food', score:f,
+      title: f>=4.5?'Food — ยอดเยี่ยม':f>=3.8?'Food — อยู่ในเกณฑ์ดี':'Food — ต้องปรับปรุง',
+      cls: f>=4.5?'r-grn':f>=3.8?'r-blu':'r-red',
+      body: f>=4.5
+        ?'คุณภาพอาหารอยู่ในระดับ Excellent — รักษา consistency ไว้ให้ได้เพื่อป้องกัน negative review'
+        :f>=3.8
+        ?`Food score ${f.toFixed(1)} อยู่ในเกณฑ์พอใช้ — เพิ่มขึ้น +0.5 จะให้ rating เพิ่ม +0.149 ดาว (β=0.298)`
+        :`Food score ${f.toFixed(1)} ต่ำกว่าเกณฑ์ — ลูกค้ายังให้ความสำคัญกับรสชาติเป็น core product ควรเป็น priority แรก`
+    },
+    {
+      aspect:'🙋 Service', score:sv,
+      title: sv>=4.5?'Service — ดีเยี่ยม (ปัจจัยสำคัญสุด)':sv>=3.8?'Service — ยังมีช่องว่าง':'Service — จุดอ่อนที่สำคัญที่สุด',
+      cls: sv>=4.5?'r-grn':sv>=3.8?'r-yel':'r-red',
+      body: sv>=4.5
+        ?'Service อยู่ระดับ Top — β=0.487 สูงสุดในแบบจำลอง ทุก +0.5 = +0.244 rating ให้ maintain ต่อไป'
+        :`Service score ${sv.toFixed(1)} — เป็นตัวแปรที่มีผลต่อ Rating สูงที่สุด (β=0.487) การปรับ +0.5 จะได้ +0.244 ดาว ซึ่งสูงกว่า Food และ Atmos รวมกัน — ลงทุนด้าน staff training ก่อนสิ่งอื่น`
+    },
+    {
+      aspect:'🌿 Atmosphere', score:at,
+      title: at>=4.5?'Atmosphere — ยอดเยี่ยม':at>=3.5?'Atmosphere — ปานกลาง':'Atmosphere — ต่ำกว่าเกณฑ์',
+      cls: at>=4.5?'r-grn':at>=3.5?'r-blu':'r-yel',
+      body: at>=4.5
+        ?'บรรยากาศดีมาก ช่วยสนับสนุนการตั้ง Price Level ที่สูงขึ้นได้ (β=0.184)'
+        :`Atmosphere ${at.toFixed(1)} — มีผลต่อ rating ที่ β=0.184 (ต่ำสุดในสาม) แต่ยังมีนัยสำคัญ p=0.038 ปรับการตกแต่งหรือ Servicescape เพื่อสร้าง differentiation`
+    },
+    {
+      aspect:'💰 Price Level', score:pl,
+      title: pl<=2?'Price — Competitive':pl<=5?`Price Level ${pl} — Monitor Value`:` Price Level ${pl} — High Risk Zone`,
+      cls: pl<=2?'r-grn':pl<=5?'r-yel':'r-red',
+      body: pl<=2
+        ?`Price Level ต่ำ — NASS_Price มักสูง ลูกค้ารู้สึก "คุ้มค่า" — ใช้จุดนี้เป็น competitive advantage ใน review`
+        :pl<=5
+        ?`Price Level ${pl} — ลูกค้าตั้งความคาดหวังสูง ต้องให้ Food + Service ≥ 4.5 เพื่อรักษา Consumer Surplus`
+        :`Price Level ${pl} สูงมาก — β Price = -0.027 หมายความว่าทุก +1 Level ลด rating ลง 0.027 ดาว ควรสนับสนุนด้วย Food + Service ระดับ Excellent เท่านั้น`
+    }
+  ];
+  document.getElementById('recAll').innerHTML = recs.map(rc=>`
+    <div class="rec ${rc.cls}">
+      <div class="rec-t">${rc.title}</div>
+      <div style="font-size:12px;color:var(--muted2)">${rc.body}</div>
+    </div>`).join('');
+}
+updateSim();
+
+// ===================== COMPARE =====================
+const sA=document.getElementById('selA'), sB=document.getElementById('selB');
+[...V].sort((a,b)=>a.n.localeCompare(b.n,'th')).forEach((d,i)=>{
+  const ri = V.indexOf(d);
+  sA.appendChild(new Option(d.n,ri));
+  sB.appendChild(new Option(d.n,ri));
+});
+// default: Lumi vs Mix Beef (good vs hidden weakness)
+const lumiIdx = V.findIndex(d=>d.n.includes('Lumi'));
+const mixIdx = V.findIndex(d=>d.n.includes('Mix Beef'));
+sA.value = lumiIdx >= 0 ? lumiIdx : 0;
+sB.value = mixIdx >= 0 ? mixIdx : 1;
+
+let radarCmp = null;
+function renderCompare(){
+  const a = V[+sA.value], b = V[+sB.value];
+  if(!a||!b) return;
+
+  if(radarCmp) radarCmp.destroy();
+  radarCmp = new Chart(document.getElementById('chartRadarCmp'),{
+    type:'radar',
+    data:{
+      labels:['Food','Service','Atmosphere','Price'],
+      datasets:[
+        {label:a.n.split(' ').slice(0,3).join(' '),data:[a.f,a.sv,a.at,a.pr],
+          backgroundColor:'rgba(108,143,255,.12)',borderColor:'rgba(108,143,255,.9)',borderWidth:2,pointRadius:5,pointBackgroundColor:'var(--accent)'},
+        {label:b.n.split(' ').slice(0,3).join(' '),data:[b.f,b.sv,b.at,b.pr],
+          backgroundColor:'rgba(255,107,107,.1)',borderColor:'rgba(255,107,107,.9)',borderWidth:2,pointRadius:5,pointBackgroundColor:'var(--neg)'},
+        {label:'Market Avg',data:[MKT.f,MKT.sv,MKT.at,MKT.pr],
+          backgroundColor:'transparent',borderColor:'rgba(255,255,255,.2)',borderDash:[4,4],borderWidth:1,pointRadius:0},
+      ]
+    },
+    options:{responsive:true,
+      plugins:{legend:{labels:{color:'#6b739a',font:{size:11},boxWidth:12}}},
+      scales:{r:{min:-20,max:110,ticks:{color:'#6b739a',stepSize:25,backdropColor:'transparent'},
+        grid:{color:'rgba(42,47,80,.6)'},angleLines:{color:'rgba(42,47,80,.6)'},
+        pointLabels:{color:'#e2e5f0',font:{size:13}}}}
+    }
+  });
+
+  // H2H
+  const metrics = [
+    {label:'Avg Rating',ka:'ar',fmt:v=>v.toFixed(2),inv:false},
+    {label:'NASS Food',ka:'f',fmt:v=>v.toFixed(1),inv:false},
+    {label:'NASS Service',ka:'sv',fmt:v=>v.toFixed(1),inv:false},
+    {label:'NASS Atmosphere',ka:'at',fmt:v=>v.toFixed(1),inv:false},
+    {label:'Price Perception',ka:'pr',fmt:v=>v.toFixed(1),inv:false},
+    {label:'Price Level',ka:'pl',fmt:v=>v??'N/A',inv:true},
+    {label:'Total Reviews',ka:'r',fmt:v=>v.toLocaleString(),inv:false},
+  ];
+  document.getElementById('h2hWrap').innerHTML = `
+    <div class="h2h-header">
+      <div style="text-align:right;font-size:12px;color:var(--accent);font-weight:600">${a.n.split(' ').slice(0,3).join(' ')}</div>
+      <div class="h2h-metric">Metric</div>
+      <div style="font-size:12px;color:var(--neg);font-weight:600">${b.n.split(' ').slice(0,3).join(' ')}</div>
+    </div>
+    `+metrics.map(m=>{
+    const va=a[m.ka]??null, vb=b[m.ka]??null;
+    const aW= va!==null&&vb!==null&&(m.inv?va<vb:va>vb);
+    const bW= va!==null&&vb!==null&&(m.inv?vb<va:vb>va);
+    const tie= va===vb;
+    return `<div class="h2h-row">
+      <div class="h2h-v ${tie?'tie':aW?'win':'los'}" style="text-align:right">${va!==null?m.fmt(va):'N/A'}</div>
+      <div class="h2h-metric">${m.label}</div>
+      <div class="h2h-v ${tie?'tie':bW?'win':'los'}">${vb!==null?m.fmt(vb):'N/A'}</div>
+    </div>`;
+  }).join('');
+
+  // Profiles
+  function makeProfile(d, color){
+    const tags = getTags(d);
+    return `
+      <div class="card-title" style="margin-bottom:14px"><span class="dot" style="background:${color}"></span>${d.n}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div><div class="sc-label">Avg Rating</div><div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:${d.ar>=4.7?'var(--pos)':d.ar>=4.3?'var(--neu)':'var(--neg)'}">${d.ar.toFixed(2)} ★</div></div>
+        <div><div class="sc-label">Reviews</div><div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--muted2)">${d.r.toLocaleString()}</div></div>
+        <div><div class="sc-label">Price Level</div><div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--muted2)">${d.pl??'N/A'} / 11</div></div>
+        <div><div class="sc-label">Tags</div><div style="margin-top:4px">${tags.length?tags.map(t=>`<span class="np ${t.cls}" style="font-size:10px">${t.label}</span>`).join(' '):'<span style="color:var(--muted);font-size:12px">—</span>'}</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'IBM Plex Mono',monospace">NASS BREAKDOWN</div>
+      ${[{l:'Food',v:d.f},{l:'Service',v:d.sv},{l:'Atmos',v:d.at},{l:'Price',v:d.pr}].map(x=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--muted2);width:55px">${x.l}</span>
+          <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${Math.max(0,Math.min(100,(x.v+100)/2))}%;height:100%;background:${x.v>=60?'var(--pos)':x.v>=20?'var(--neu)':'var(--neg)'};border-radius:3px;"></div>
+          </div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:${x.v>=60?'var(--pos)':x.v>=20?'var(--neu)':'var(--neg)'};width:42px;text-align:right">${x.v.toFixed(1)}</span>
+        </div>`).join('')}
+    `;
+  }
+  document.getElementById('profileA').innerHTML = makeProfile(a,'var(--accent)');
+  document.getElementById('profileB').innerHTML = makeProfile(b,'var(--neg)');
+}
+renderCompare();
+
+// ===================== TABS =====================
+function switchTab(id, btn){
+  document.querySelectorAll('.tc').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tc-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>
